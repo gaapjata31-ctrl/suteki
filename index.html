@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>特別区経験者採用 数的処理 演習</title>
+<style>
+:root{
+  --ink:#1a1a17;--ink-soft:#4a4a44;--paper:#f4f1e9;--paper-2:#eae5d8;
+  --line:#c9c2b0;--line-strong:#9b937e;--shu:#c0392b;--shu-soft:#e8d2cd;
+  --mono:'SFMono-Regular',Menlo,Consolas,'Courier New',monospace;
+  --serif:'Hiragino Mincho ProN','Yu Mincho',YuMincho,'Noto Serif JP',serif;
+  --sans:'Hiragino Kaku Gothic ProN','Yu Gothic',YuGothic,'Noto Sans JP',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.7;font-size:15px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:680px;margin:0 auto;padding:0 18px 60px}
+header.mast{border-bottom:2px solid var(--ink);padding:24px 0 16px;margin-bottom:6px;position:relative}
+.mast .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--ink-soft);text-transform:uppercase}
+.mast h1{font-family:var(--serif);font-weight:600;font-size:25px;letter-spacing:.04em;margin-top:3px;line-height:1.3}
+.mast .sub{font-size:12.5px;color:var(--ink-soft);margin-top:5px}
+.stamp{position:absolute;top:20px;right:2px;width:58px;height:58px;border:2px solid var(--shu);border-radius:50%;color:var(--shu);font-family:var(--serif);font-weight:700;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;line-height:1.15;transform:rotate(-8deg);opacity:.9}
+@media(max-width:520px){.stamp{display:none}}
+.lead{font-size:13px;color:var(--ink-soft);margin:18px 0 22px;line-height:1.85}
+.sec{font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--ink-soft);text-transform:uppercase;margin:0 0 12px;border-bottom:1px solid var(--line);padding-bottom:6px}
+a.card{display:block;text-decoration:none;color:var(--ink);border:1px solid var(--line-strong);background:#fff;margin-bottom:13px;transition:transform .08s,box-shadow .08s}
+a.card:active{transform:translateY(1px)}
+.card .top{display:flex;align-items:center;gap:12px;padding:14px 16px 10px}
+.card .idx{font-family:var(--mono);font-weight:700;font-size:13px;background:var(--ink);color:var(--paper);padding:3px 9px;border-radius:2px;flex:none}
+.card .nm{font-family:var(--serif);font-size:19px;font-weight:600;letter-spacing:.04em}
+.card .en{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;color:var(--line-strong);margin-left:auto;text-transform:uppercase}
+.card .meta{padding:0 16px 14px;font-size:12px;color:var(--ink-soft)}
+.card .meta .tops{margin-top:3px}
+.card .meta .q{font-family:var(--mono);color:var(--shu)}
+.card .arrow{font-family:var(--mono);color:var(--line-strong);margin-left:6px}
+footer.foot{margin-top:28px;padding-top:14px;border-top:1px solid var(--line);font-size:11px;color:var(--ink-soft);line-height:1.8}
+.tip{background:var(--paper-2);border-left:3px solid var(--shu);padding:11px 14px;font-size:12.5px;color:var(--ink-soft);margin:6px 0 24px;line-height:1.8}
+.tip b{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="mast">
+    <div class="kicker">TOKYO-23 / EXPERIENCED HIRE</div>
+    <h1>特別区経験者採用　数的処理</h1>
+    <div class="sub">過去11年・全176問　演習と「解くコツ」</div>
+    <div class="stamp">過去<br>問</div>
+  </header>
+
+  <p class="lead">学習したい分野を選んでください。各分野に「出題傾向グリッド」「解くコツ」「問題演習（答え合わせ・解説つき）」が入っています。スマホで快適に開けるよう、分野ごとにファイルを分けています。</p>
+
+  <div class="sec">分野を選ぶ / SELECT FIELD</div>
+
+  <a class="card" href="01_handan.html">
+    <div class="top"><span class="idx">01</span><span class="nm">判断推理</span><span class="en">Deduction</span></div>
+    <div class="meta"><span class="q">全44問</span>　／　暗号・対応関係・リーグ戦 ほか
+      <div class="tops">最頻出：暗号（11年連続）<span class="arrow">▷</span></div></div>
+  </a>
+
+  <a class="card" href="02_suuteki.html">
+    <div class="top"><span class="idx">02</span><span class="nm">数的推理</span><span class="en">Numeric</span></div>
+    <div class="meta"><span class="q">全44問</span>　／　平面図形・数列・仕事算 ほか
+      <div class="tops">最頻出：平面図形（毎年№13）<span class="arrow">▷</span></div></div>
+  </a>
+
+  <a class="card" href="03_shiryou.html">
+    <div class="top"><span class="idx">03</span><span class="nm">資料解釈</span><span class="en">Data</span></div>
+    <div class="meta"><span class="q">全44問</span>　／　図表・円グラフ・棒グラフ ほか
+      <div class="tops">最頻出：図表（毎年№17・18）<span class="arrow">▷</span></div></div>
+  </a>
+
+  <a class="card" href="04_kuukan.html">
+    <div class="top"><span class="idx">04</span><span class="nm">空間把握</span><span class="en">Spatial</span></div>
+    <div class="meta"><span class="q">全44問</span>　／　軌跡・パズル・展開図 ほか
+      <div class="tops">最頻出：軌跡（9回）<span class="arrow">▷</span></div></div>
+  </a>
+
+  <div class="tip"><b>使い方のヒント</b>　スマホのブラウザでこのページをホーム画面に追加しておくと、アプリのように素早く開けます（Safariなら共有ボタン →「ホーム画面に追加」）。</div>
+
+  <footer class="foot">
+    出典：特別区経験者採用 数的処理 過去問 2014–2024（全176問／Gravity 出題分析表に基づく分類）。本アプリは過去問の本文・解説を学習用に再構成したもの。図版が必要な問題・数式が複雑な解説は元ページ画像を掲載。
+  </footer>
+</div>
+</body>
+</html>
