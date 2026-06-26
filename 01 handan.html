@@ -37,6 +37,21 @@ header.mast{
   margin-bottom:4px;
   position:relative;
 }
+.backlink{
+  display:none;                 /* 分割版（単一分野）でのみJSで表示 */
+  font-family:var(--mono);
+  font-size:11.5px;
+  color:var(--shu);
+  text-decoration:none;
+  margin-bottom:10px;
+  letter-spacing:.02em;
+  border:1px solid var(--shu);
+  border-radius:2px;
+  padding:5px 12px;
+  background:var(--paper);
+  width:fit-content;
+}
+.backlink:active{background:var(--shu-soft)}
 .mast .kicker{
   font-family:var(--mono);
   font-size:11px;letter-spacing:.18em;
@@ -220,6 +235,7 @@ footer.foot{margin-top:30px;padding-top:14px;border-top:1px solid var(--line);fo
 <body>
 <div class="wrap">
   <header class="mast">
+    <a class="backlink" id="backlink" href="index.html">← 分野選択にもどる</a>
     <div class="kicker">TOKYO-23 / EXPERIENCED HIRE</div>
     <h1>特別区経験者採用　数的処理</h1>
     <div class="sub"><span id="meta-count">過去11年・全176問</span>　演習と「解くコツ」<span id="meta-pub"></span></div>
@@ -249,9 +265,10 @@ const esc=s=>(s||'').replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]
 
 $('#meta-src').textContent = D.meta.source;
 $('#meta-pub').textContent = '　／　'+D.meta.publisher;
-// 分割版（単一分野）のときはサブタイトルを分野別表記に
+// 分割版（単一分野）のときはサブタイトルを分野別表記に＋分野選択へ戻るリンクを表示
 if(D.fields.length===1){
   $('#meta-count').textContent = D.fields[0]+'　全'+D.questions.length+'問（過去11年）';
+  const bl=$('#backlink'); if(bl) bl.style.display='inline-block';
 }
 
 // in-memory answer state (no storage APIs allowed)
