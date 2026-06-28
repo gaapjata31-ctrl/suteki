@@ -169,6 +169,9 @@ table.heat td[data-c="3"].has{color:#fff}
 .verdict{font-family:var(--mono);font-size:12px;font-weight:700}
 .verdict.ok{color:#2e7d32}
 .verdict.ng{color:var(--shu)}
+.qdone{margin-left:auto;font-family:var(--mono);font-size:10.5px;font-weight:700;color:var(--ink-soft);border:1px solid var(--line-strong);border-radius:2px;padding:2px 7px;background:var(--paper)}
+.qdone.ok{color:#2e7d32;border-color:#2e7d32;background:#eef5ef}
+.qdone.ng{color:var(--shu);border-color:var(--shu);background:var(--shu-soft)}
 
 /* ── explanation ── */
 .explain{margin:2px 16px 16px;border-top:2px solid var(--ink);padding-top:12px;display:none}
@@ -282,10 +285,11 @@ const filterState = {};
 const LOG_KEY = 'tokubetsuku_suuteki_studylog_v1';
 const studyLog = {
   read(){
-    try{ return JSON.parse(localStorage.getItem(LOG_KEY)) || {days:{}}; }
-    catch(e){ return {days:{}}; }
+    try{ return JSON.parse(localStorage.getItem(LOG_KEY)) || {days:{},progress:{}}; }
+    catch(e){ return {days:{},progress:{}}; }
   },
   write(d){
+    if(!d.progress) d.progress={};
     try{ localStorage.setItem(LOG_KEY, JSON.stringify(d)); }catch(e){}
   },
   todayKey(){
@@ -300,6 +304,19 @@ const studyLog = {
     d.days[k].total++;
     d.days[k].fields[field]=(d.days[k].fields[field]||0)+1;
     this.write(d);
+  },
+  // 問題ごとの進捗を記録（解いた日付・選んだ番号・正誤）
+  recordProgress(qid, picked, correct){
+    const d=this.read();
+    if(!d.progress) d.progress={};
+    if(d.progress[qid]) return false;     // すでに記録済みなら何もしない
+    d.progress[qid]={ date:this.todayKey(), picked:(picked==null?null:picked), correct:!!correct };
+    this.write(d);
+    return true;
+  },
+  getProgress(qid){
+    const d=this.read();
+    return (d.progress&&d.progress[qid])||null;
   },
   // 連続学習日数（今日または昨日まで続いていればカウント）
   streak(){
@@ -327,6 +344,10 @@ function markAnswered(q){
   if(state.answered[q.id]) return;          // すでに解答済みなら記録しない
   state.answered[q.id]=true;
   studyLog.record(q.field);
+  // 問題ごとの進捗（日付・正誤）も記録
+  const picked=state.picked[q.id];
+  const correct = (picked!=null && q.answer!=='なし' && String(picked)===String(q.answer));
+  studyLog.recordProgress(q.id, picked, correct);
   cloudSync.push();                          // クラウドへ保存（複数端末で同期）
 }
 
@@ -341,9 +362,9 @@ const HEADERS = {
   'Content-Type': 'application/json'
 };
 
-// 2つの記録(days)を「日付・分野ごとに大きい方を採用」して統合
+// 2つの記録(days, progress)を統合
 function mergeLogs(a, b){
-  const out = { days: {} };
+  const out = { days: {}, progress: {} };
   const keys = new Set([...Object.keys(a.days||{}), ...Object.keys(b.days||{})]);
   keys.forEach(k=>{
     const da=(a.days&&a.days[k])||{total:0,fields:{}};
@@ -356,6 +377,16 @@ function mergeLogs(a, b){
       fields[f]=v; total+=v;
     });
     out.days[k]={ total, fields };
+  });
+  // 問題ごとの進捗：両方にあれば早い日付を優先、片方だけならそれを採用
+  const pa=a.progress||{}, pb=b.progress||{};
+  const pk=new Set([...Object.keys(pa), ...Object.keys(pb)]);
+  pk.forEach(qid=>{
+    if(pa[qid] && pb[qid]){
+      out.progress[qid] = (pa[qid].date <= pb[qid].date) ? pa[qid] : pb[qid];
+    }else{
+      out.progress[qid] = pa[qid] || pb[qid];
+    }
   });
   return out;
 }
@@ -629,11 +660,13 @@ function renderField(field){
 
   // progress
   const ansCount=qs.filter(q=>state.answered[q.id]).length;
-  const okCount=qs.filter(q=>state.answered[q.id] && String(state.picked[q.id])===String(q.answer)).length;
+  const okCount=qs.filter(q=>{const p=studyLog.getProgress(q.id);return p&&p.correct;}).length;
+  const ngCount=qs.filter(q=>{const p=studyLog.getProgress(q.id);return p&&!p.correct&&q.answer!=='なし';}).length;
   const prog=el('div','prog',
     `分野 <b>${field}</b>　/　${FIELD_EN[field]}`+
     `<span>解答済 <b>${ansCount}</b> / ${qs.length}</span>`+
     `<span>正答 <b>${okCount}</b></span>`+
+    `<span>不正答 <b>${ngCount}</b></span>`+
     `<button class="reset" id="reset">この分野をリセット</button>`);
   v.appendChild(prog);
 
@@ -659,26 +692,47 @@ function renderField(field){
   const yrSel=el('select'); yrSel.id='fyear';
   yrSel.appendChild(el('option',null,'すべての年度')); yrSel.firstChild.value='';
   [...new Set(qs.map(q=>q.year))].sort().forEach(y=>{const o=el('option',null,y+'年');o.value=y;yrSel.appendChild(o);});
+  // 状態フィルタ（未解答・正解・不正解で絞り込み）
+  const stSel=el('select'); stSel.id='fstate';
+  [['','すべての状態'],['unanswered','未解答だけ'],['correct','正解だけ'],['wrong','不正解だけ']].forEach(([v0,t0])=>{
+    const o=el('option',null,t0); o.value=v0; stSel.appendChild(o);
+  });
   // 保存済みのフィルタ選択を復元
-  const saved=filterState[field]||{topic:'',year:''};
-  topSel.value=saved.topic; yrSel.value=saved.year;
-  fb.appendChild(topSel); fb.appendChild(yrSel);
+  const saved=filterState[field]||{topic:'',year:'',st:''};
+  topSel.value=saved.topic; yrSel.value=saved.year; stSel.value=saved.st||'';
+  fb.appendChild(topSel); fb.appendChild(yrSel); fb.appendChild(stSel);
   fb.appendChild(el('span','count','')); 
   v.appendChild(fb);
 
   const list=el('div'); list.id='qlist'; v.appendChild(list);
 
   function paint(){
-    const ft=topSel.value, fy=yrSel.value;
-    filterState[field]={topic:ft,year:fy};   // 選択を保存
-    const show=qs.filter(q=>(!ft||q.topic===ft)&&(!fy||String(q.year)===fy));
+    const ft=topSel.value, fy=yrSel.value, fs=stSel.value;
+    filterState[field]={topic:ft,year:fy,st:fs};   // 選択を保存
+    const show=qs.filter(q=>{
+      if(ft && q.topic!==ft) return false;
+      if(fy && String(q.year)!==fy) return false;
+      const p=studyLog.getProgress(q.id);
+      if(fs==='unanswered' && p) return false;
+      if(fs==='correct' && !(p&&p.correct)) return false;
+      if(fs==='wrong' && !(p&&!p.correct&&q.answer!=='なし')) return false;
+      return true;
+    });
     fb.querySelector('.count').textContent=`${show.length}問`;
     list.innerHTML='';
     if(!show.length){list.appendChild(el('div','empty','該当する問題がありません'));return;}
     show.forEach(q=>list.appendChild(renderQ(q,field)));
   }
-  topSel.onchange=paint; yrSel.onchange=paint;
-  $('#reset').onclick=()=>{qs.forEach(q=>{delete state.answered[q.id];delete state.picked[q.id];});render();};
+  topSel.onchange=paint; yrSel.onchange=paint; stSel.onchange=paint;
+  $('#reset').onclick=()=>{
+    if(!confirm(field+'の解答記録（解答済み・正誤）を消去します。よろしいですか？')) return;
+    // ローカルの進捗から該当分野の問題を削除
+    const d=studyLog.read();
+    qs.forEach(q=>{ delete state.answered[q.id]; delete state.picked[q.id]; if(d.progress) delete d.progress[q.id]; });
+    studyLog.write(d);
+    cloudSync.push();
+    render();
+  };
   paint();
 }
 
@@ -688,6 +742,18 @@ function renderQ(q,field){
   head.appendChild(el('span','qno','№'+q.no));
   head.appendChild(el('span','qtopic',esc(q.topic)));
   head.appendChild(el('span','qtag',`${q.year}年度`));
+  // 解答済みバッジ（日付・正誤）
+  const pr=studyLog.getProgress(q.id);
+  if(pr){
+    const mark=el('span','qdone');
+    let label='✓ 解答済';
+    const md=pr.date ? pr.date.slice(5).replace('-','/') : '';   // MM/DD
+    if(q.answer==='なし'){ label+='（'+md+'）'; }
+    else if(pr.correct){ label+=' 正解（'+md+'）'; mark.classList.add('ok'); }
+    else { label+=' 不正解（'+md+'）'; mark.classList.add('ng'); }
+    mark.textContent=label;
+    head.appendChild(mark);
+  }
   card.appendChild(head);
 
   const body=el('div','qbody');
@@ -799,12 +865,22 @@ function render(){
   if(active==='home') renderHome();
   else renderField(active);
 }
+// 保存済みの進捗を画面状態に復元（解答済みマーク・選んだ番号を再現）
+function restoreProgress(){
+  const d=studyLog.read();
+  const prog=d.progress||{};
+  Object.keys(prog).forEach(qid=>{
+    state.answered[qid]=true;
+    if(prog[qid].picked!=null) state.picked[qid]=prog[qid].picked;
+  });
+}
+restoreProgress();
 render();
 // 起動時にクラウドから最新の記録を取得して反映
-cloudSync.pull().then(()=>{ if(active==='home') renderHome(); });
+cloudSync.pull().then(()=>{ restoreProgress(); render(); });
 // 他端末の更新を拾うため、画面復帰時にも同期
 document.addEventListener('visibilitychange',()=>{
-  if(!document.hidden){ cloudSync.pull().then(()=>{ if(active==='home') renderHome(); }); }
+  if(!document.hidden){ cloudSync.pull().then(()=>{ restoreProgress(); render(); }); }
 });
 </script>
 </body>
